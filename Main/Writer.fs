@@ -1,3 +1,4 @@
+/// <summary>CSV writers for output data files.</summary>
 module Writer
 
 open System
@@ -6,9 +7,13 @@ open System.IO
 open Types
 
 
+/// <summary>Formats a decimal using invariant culture.</summary>
 let private toInvariantString (value: decimal) =
     value.ToString(CultureInfo.InvariantCulture)
 
+/// <summary>Writes order totals to a CSV file.</summary>
+/// <param name="path">Output file path.</param>
+/// <param name="rows">Totals to write.</param>
 let writeOrderTotals (path: string) (rows: seq<OrderTotals>) =
     let directory = Path.GetDirectoryName(path)
     if not (String.IsNullOrWhiteSpace(directory)) then
