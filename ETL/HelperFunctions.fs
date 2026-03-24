@@ -79,6 +79,79 @@ module calculation =
         let filteredItems =  items |> Seq.filter(fun (i: Item) -> i.OrderId = order_id)
         filteredItems |> Seq.map(fun i ->(i.Tax * decimal i.Quantity * i.Price)) |> Seq.sum
 
+    /// <summary>Groups items by order and calculates totals with item lists.</summary>
+    /// <param name="items">Items to group.</param>
+    /// <param name="orders">Orders to include in the result.</param>
+    let buildOrderSummaries (items: seq<Item>) (orders: seq<Order>) : Map<int, OrderSummary> =
+        let allowedOrderIds = orders |> Seq.map (fun o -> o.Id) |> Set.ofSeq
+        items
+        |> Seq.filter (fun i -> allowedOrderIds |> Set.contains i.OrderId)
+        |> Seq.groupBy (fun i -> i.OrderId)
+        |> Seq.map (fun (orderId, orderItems) ->
+            let itemsList = orderItems |> Seq.toList
+            let totalAmount = itemsList |> List.sumBy (fun i -> i.Price * decimal i.Quantity)
+            let totalTaxes = itemsList |> List.sumBy (fun i -> i.Tax * decimal i.Quantity * i.Price)
+            orderId,
+            {
+                OrderId = orderId
+                TotalAmount = totalAmount
+                TotalTaxes = totalTaxes
+                Items = itemsList
+            }
+        )
+        |> Map.ofSeq
+
+    /// <summary>Calculates the total amount by month and year.</summary>
+    /// <param name="items">Items to aggregate.</param>
+    /// <param name="orders">Orders to group by month and year.</param>
+    let CalculateTotalAmountByMonthYear (items: seq<Item>) (orders: seq<Order>) =
+        let orderTotals = 
+            orders
+            |> Seq.map (fun o ->
+                let totalAmount = calculeTotalAmount items o.Id
+                (o.OrderDate.Month, o.OrderDate.Year), totalAmount
+            )
+        orderTotals
+        |> Seq.groupBy fst
+        |> Seq.map (fun (monthYear, totals) ->
+            monthYear, totals |> Seq.sumBy snd
+        )
+    
+    /// <summary>Calculates the total taxes by month and year.</summary>
+    /// <param name="items">Items to aggregate.</param>
+    /// <param name="orders">Orders to group by month and year.</param>
+    let CalculateTotalTaxesByMonthYear (items: seq<Item>) (orders: seq<Order>) =
+        let orderTaxes = 
+            orders
+            |> Seq.map (fun o ->
+                let totalTaxes = calculateTotalTaxes items o.Id
+                (o.OrderDate.Month, o.OrderDate.Year), totalTaxes
+            )
+        orderTaxes
+        |> Seq.groupBy fst
+        |> Seq.map (fun (monthYear, taxes) ->
+            monthYear, taxes |> Seq.sumBy snd
+        )
+        
+module Parsers =
+    let normalize (value: string) =
+        value.Trim().ToLowerInvariant()
+
+    /// <summary>Parses a status string into a <see cref="T:Types.Status"/>.</summary>
+    let tryParseStatus (value: string) =
+        match normalize value with
+        | "pending" -> Some Pending
+        | "completed" | "complete" -> Some Completed
+        | "cancelled" | "canceled" -> Some Cancelled
+        | _ -> None
+
+    /// <summary>Parses an origin string into a <see cref="T:Types.Origin"/>.</summary>
+    let tryParseOrigin (value: string) =
+        match normalize value with
+        | "online" | "o" -> Some Online
+        | "person" | "p" -> Some Person
+        | _ -> None
+
 
 
 

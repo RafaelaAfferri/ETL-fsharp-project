@@ -35,3 +35,11 @@ type OrderTotals = {
     TotalAmount: decimal
     TotalTaxes: decimal
 }
+
+/// <summary>Aggregated totals with items for an order.</summary>
+type OrderSummary = {
+    OrderId: int
+    TotalAmount: decimal
+    TotalTaxes: decimal
+    Items: Item list
+}

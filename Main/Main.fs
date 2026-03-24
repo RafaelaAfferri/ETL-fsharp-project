@@ -13,47 +13,38 @@ open System.IO
 [<EntryPoint>]
 let main argv =
 
-    /// <summary>Normalizes user input for comparisons.</summary>
-    let normalize (value: string) =
-        value.Trim().ToLowerInvariant()
-
-    /// <summary>Parses a status string into a <see cref="T:Types.Status"/>.</summary>
-    let tryParseStatus (value: string) =
-        match normalize value with
-        | "pending" -> Some Pending
-        | "completed" | "complete" -> Some Completed
-        | "cancelled" | "canceled" -> Some Cancelled
-        | _ -> None
-
-    /// <summary>Parses an origin string into a <see cref="T:Types.Origin"/>.</summary>
-    let tryParseOrigin (value: string) =
-        match normalize value with
-        | "online" | "o" -> Some Online
-        | "person" | "p" -> Some Person
-        | _ -> None
-
     /// <summary>Prompts the user for a yes/no answer.</summary>
     let askYesNo (prompt: string) =
         printf "%s (s/n): " prompt
         let response = Console.ReadLine()
-        normalize response = "s"
+        HelperFunctions.Parsers.normalize response = "s"
 
     /// <summary>Prompts the user for a status filter.</summary>
     let askStatus () =
         printf "Qual status? (Pending/Completed/Cancelled): "
         let response = Console.ReadLine()
-        tryParseStatus response
+        HelperFunctions.Parsers.tryParseStatus response
 
     /// <summary>Prompts the user for an origin filter.</summary>
     let askOrigin () =
         printf "Qual origem? (Online/Person): "
         let response = Console.ReadLine()
-        tryParseOrigin response
+        HelperFunctions.Parsers.tryParseOrigin response
 
-   
-    let ordersList = HelperFunctions.ConvertCsv.CsvToOrder Reader.orders |> Seq.toList
-   
-    let itemsList = HelperFunctions.ConvertCsv.CsvToItem Reader.items |> Seq.toList
+    let useInternet = askYesNo "Ler arquivos da internet?"
+
+    let ordersPath = if useInternet then Reader.remoteOrdersUrl else Reader.localOrdersPath
+    let itemsPath = if useInternet then Reader.remoteItemsUrl else Reader.localItemsPath
+
+    let ordersList =
+        Reader.loadOrders ordersPath
+        |> HelperFunctions.ConvertCsv.CsvToOrder
+        |> Seq.toList
+
+    let itemsList =
+        Reader.loadItems itemsPath
+        |> HelperFunctions.ConvertCsv.CsvToItem
+        |> Seq.toList
 
     let filteredOrders =
         let statusFilter =
@@ -75,25 +66,34 @@ let main argv =
             statusOk && originOk
         )
 
+    let orderSummaries =
+        HelperFunctions.calculation.buildOrderSummaries itemsList filteredOrders
 
     let orderTotals =
-        filteredOrders
-        |> List.map (fun o ->
-            let totalAmount = HelperFunctions.calculation.calculeTotalAmount itemsList o.Id
-            let totalTaxes = HelperFunctions.calculation.calculateTotalTaxes itemsList o.Id
+        orderSummaries
+        |> Map.toSeq
+        |> Seq.map snd
+        |> Seq.map (fun s ->
             {
-                OrderId = o.Id
-                TotalAmount = totalAmount
-                TotalTaxes = totalTaxes
+                OrderId = s.OrderId
+                TotalAmount = s.TotalAmount
+                TotalTaxes = s.TotalTaxes
             }
         )
 
+    let orderTotalsByMonthYear = HelperFunctions.calculation.CalculateTotalAmountByMonthYear itemsList filteredOrders
+    let taxesByMonthYear = HelperFunctions.calculation.CalculateTotalTaxesByMonthYear itemsList filteredOrders
 
     let outputPath: string = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", "DataOut", "order_totals.csv"))
+    let outputPathByMonthYear: string = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", "DataOut", "totals_by_month_year.csv"))
+    let dbPath: string = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "..", "DataOut", "etl.db"))
+
     Writer.writeOrderTotals outputPath orderTotals
+    Writer.writeTotalsByMonthYear outputPathByMonthYear orderTotalsByMonthYear taxesByMonthYear
     printfn "CSV salvo em: %s" outputPath
 
+    if askYesNo "Salvar no banco local (SQLite)?" then
+        Writer.writeOrderTotalsToSqlite dbPath orderTotals
+        printfn "SQLite salvo em: %s" dbPath
 
-
-
-    0// Return an integer exit code
+    0
