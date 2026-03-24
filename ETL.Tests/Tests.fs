@@ -156,8 +156,8 @@ let ``buildOrderSummaries returns totals for allowed orders`` () =
     Assert.Equal(2, summary.Items.Length)
 
 [<Fact>]
-let ``CalculateTotalAmountByMonthYear groups totals`` () =
-    // CalculateTotalAmountByMonthYear: groups January and February totals.
+let ``CalculateAverageAmountByMonthYear returns averages`` () =
+    // CalculateAverageAmountByMonthYear: averages January and February totals.
     let items =
         [
             { OrderId = 1; ProductId = 100; Quantity = 2; Price = 10.0m; Tax = 0.1m }
@@ -171,14 +171,14 @@ let ``CalculateTotalAmountByMonthYear groups totals`` () =
             makeOrder 3 12 (DateTime(2024, 2, 5)) Cancelled Online
         ]
 
-    let totals = calculation.CalculateTotalAmountByMonthYear items orders |> Map.ofSeq
+    let totals = calculation.CalculateAverageAmountByMonthYear items orders |> Map.ofSeq
 
-    Assert.Equal(25.0m, totals.[(1, 2024)])
+    Assert.Equal(12.5m, totals.[(1, 2024)])
     Assert.Equal(12.0m, totals.[(2, 2024)])
 
 [<Fact>]
-let ``CalculateTotalTaxesByMonthYear groups taxes`` () =
-    // CalculateTotalTaxesByMonthYear: groups January and February taxes.
+let ``CalculateAverageTaxesByMonthYear returns averages`` () =
+    // CalculateAverageTaxesByMonthYear: averages January and February taxes.
     let items =
         [
             { OrderId = 1; ProductId = 100; Quantity = 2; Price = 10.0m; Tax = 0.1m }
@@ -192,9 +192,9 @@ let ``CalculateTotalTaxesByMonthYear groups taxes`` () =
             makeOrder 3 12 (DateTime(2024, 2, 5)) Cancelled Online
         ]
 
-    let totals = calculation.CalculateTotalTaxesByMonthYear items orders |> Map.ofSeq
+    let totals = calculation.CalculateAverageTaxesByMonthYear items orders |> Map.ofSeq
 
-    Assert.Equal(3.0m, totals.[(1, 2024)])
+    Assert.Equal(1.5m, totals.[(1, 2024)])
     Assert.Equal(0.6m, totals.[(2, 2024)])
 
 // Parsers module tests

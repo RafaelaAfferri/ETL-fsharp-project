@@ -31,13 +31,17 @@ let writeOrderTotals (path: string) (rows: seq<OrderTotals>) =
         |]))
     )
 
-let writeTotalsByMonthYear (path: string) (OrdersRow: seq<(int * int) * decimal>) (TaxesRow: seq<(int * int) * decimal>) =
+/// <summary>Writes monthly averages to a CSV file.</summary>
+/// <param name="path">Output file path.</param>
+/// <param name="OrdersRow">Average amount per month/year.</param>
+/// <param name="TaxesRow">Average taxes per month/year.</param>
+let writeAveragesByMonthYear (path: string) (OrdersRow: seq<(int * int) * decimal>) (TaxesRow: seq<(int * int) * decimal>) =
     let directory = Path.GetDirectoryName(path)
     if not (String.IsNullOrWhiteSpace(directory)) then
         Directory.CreateDirectory(directory) |> ignore
 
     use writer = new StreamWriter(path, false)
-    writer.WriteLine("month,year,total_amount,total_taxes")
+    writer.WriteLine("month,year,avg_amount,avg_taxes")
     let data = 
         OrdersRow
         |> Seq.map (fun ((month, year), totalAmount) ->

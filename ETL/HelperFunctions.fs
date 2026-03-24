@@ -101,11 +101,11 @@ module calculation =
         )
         |> Map.ofSeq
 
-    /// <summary>Calculates the total amount by month and year.</summary>
+    /// <summary>Calculates the average amount by month and year.</summary>
     /// <param name="items">Items to aggregate.</param>
     /// <param name="orders">Orders to group by month and year.</param>
-    let CalculateTotalAmountByMonthYear (items: seq<Item>) (orders: seq<Order>) =
-        let orderTotals = 
+    let CalculateAverageAmountByMonthYear (items: seq<Item>) (orders: seq<Order>) =
+        let orderTotals =
             orders
             |> Seq.map (fun o ->
                 let totalAmount = calculeTotalAmount items o.Id
@@ -114,14 +114,16 @@ module calculation =
         orderTotals
         |> Seq.groupBy fst
         |> Seq.map (fun (monthYear, totals) ->
-            monthYear, totals |> Seq.sumBy snd
+            let sum = totals |> Seq.sumBy snd
+            let count = totals |> Seq.length |> decimal
+            monthYear, (sum / count)
         )
     
-    /// <summary>Calculates the total taxes by month and year.</summary>
+    /// <summary>Calculates the average taxes by month and year.</summary>
     /// <param name="items">Items to aggregate.</param>
     /// <param name="orders">Orders to group by month and year.</param>
-    let CalculateTotalTaxesByMonthYear (items: seq<Item>) (orders: seq<Order>) =
-        let orderTaxes = 
+    let CalculateAverageTaxesByMonthYear (items: seq<Item>) (orders: seq<Order>) =
+        let orderTaxes =
             orders
             |> Seq.map (fun o ->
                 let totalTaxes = calculateTotalTaxes items o.Id
@@ -130,7 +132,9 @@ module calculation =
         orderTaxes
         |> Seq.groupBy fst
         |> Seq.map (fun (monthYear, taxes) ->
-            monthYear, taxes |> Seq.sumBy snd
+            let sum = taxes |> Seq.sumBy snd
+            let count = taxes |> Seq.length |> decimal
+            monthYear, (sum / count)
         )
         
 module Parsers =
