@@ -109,4 +109,4 @@ The test suite maps directly to pure functions in `HelperFunctions`:
 	- Verifies average taxes per month/year.
 
 ## Generative AI Usage
-Yes. Used to help fix code and write this README.
+Used to help fix code bugs and co-write this README.
