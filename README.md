@@ -20,11 +20,11 @@ dotnet run --project Main/Main.fsproj
 ```
 
 Console flow:
-- "Ler arquivos da internet?" (s/n)
-	- s: use HTTP URLs (raw GitHub)
+- "Read input files from the internet?" (y/n)
+	- y: use HTTP URLs (raw GitHub)
 	- n: use local files in DataIn/
 - Optional filters for status and origin
-- "Salvar no banco local (SQLite)?" (s/n)
+- "Save to local database (SQLite)?" (s/n)
 
 Outputs:
 - DataOut/order_totals.csv: totals by order (total amount and total taxes)
@@ -57,34 +57,19 @@ Outputs:
 - xUnit + Microsoft.NET.Test.Sdk + coverlet: unit testing
 
 ## Optional Requirements Checklist
-
-[X] Read input data from a static file on the internet (HTTP)
-
-[X] Save output data to a relational database (SQLite)
-
-[X] Join input tables before Transform (inner join in F#)
-
-[X] Organize the ETL as a .NET project
-
-[X] Document functions with docstrings
-
-[X] Additional output with average revenue and taxes by month/year
-
-[X] Complete tests for pure functions
-
-- Read input data from a static file on the internet (HTTP)
+- Read input data from a static file on the internet (HTTP) ✅
     -   Implemented in Reader module with `remoteOrdersUrl` and `remoteItemsUrl` and selected in Main.
-- Save output data to a relational database
+- Save output data to a relational database ✅
     - Implemented in `Writer.writeOrderTotalsToSqlite` using SQLite.
-- Join input tables before Transform (inner join in F#)
+- Join input tables before Transform (inner join in F#) ✅
     - Implemented in `HelperFunctions.calculation.buildOrderSummaries` by filtering items to allowed order IDs and aggregating.
-- Organize the ETL as a .NET project
+- Organize the ETL as a .NET project ✅
     - Implemented as separate projects: ETL (library), Main (console app), ETL.Tests (tests).
-- Document functions with docstrings
+- Document functions with docstrings ✅
     - XML docstrings (`///`) across modules; docs enabled in ETL project.
-- Additional output with average revenue and taxes by month/year
+- Additional output with average revenue and taxes by month/year ✅
     - Implemented in `HelperFunctions.calculation.CalculateAverageAmountByMonthYear` and `CalculateAverageTaxesByMonthYear`, written by `Writer.writeAveragesByMonthYear`.
-- Complete tests for pure functions
+- Complete tests for pure functions ✅
     - Implemented in ETL.Tests covering conversion, filters, aggregation, join, and monthly averages.
 
 
